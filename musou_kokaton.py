@@ -176,25 +176,26 @@ class Bomb(pg.sprite.Sprite):
             self.kill()
 
 
-class Beam(pg.sprite.Sprite):
+class Beam(pg.sprite.Sprite ):
     """
     ビームに関するクラス
     """
-    def __init__(self, bird: Bird):
+    def __init__(self, bird: Bird, angle0: float = 0):
         """
         ビーム画像Surfaceを生成する
         引数 bird：ビームを放つこうかとん
         """
         super().__init__()
         self.vx, self.vy = bird.dire
-        angle = math.degrees(math.atan2(-self.vy, self.vx))
-        self.image = pg.transform.rotozoom(pg.image.load(f"fig/beam.png"), angle, 1.0)
+        angle = math.degrees(math.atan2(-self.vy, self.vx,))+angle0
+        self.image = pg.transform.rotozoom(pg.image.load(f"fig/beam.png"), angle, 1.0,)
         self.vx = math.cos(math.radians(angle))
         self.vy = -math.sin(math.radians(angle))
         self.rect = self.image.get_rect()
         self.rect.centery = bird.rect.centery+bird.rect.height*self.vy
         self.rect.centerx = bird.rect.centerx+bird.rect.width*self.vx
-        self.speed = 10
+        self.speed = 10 
+        
 
     def update(self):
         """
@@ -204,8 +205,17 @@ class Beam(pg.sprite.Sprite):
         self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
         if check_bound(self.rect) != (True, True):
             self.kill()
-
-
+class NeoBeam:
+    def __init__(self, bird: Bird, num: int):
+        self.bird=bird
+        self.num=num
+    def gen_beams(self)->list[Beam]:
+        beams=[]
+        step=100//(self.num-1)
+        for angle0 in range(-50,+51,step):
+            beam=Beam(self.bird,angle0)
+            beams.append(beam)
+        return beams
 class Explosion(pg.sprite.Sprite):
     """
     爆発に関するクラス
@@ -368,6 +378,14 @@ def main():
                     emp = EMP(emys, bombs, screen)
             
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                        if event.key == pg.K_SPACE:
+                            if key_lst[pg.K_LSHIFT]:
+                                neo_Beam=NeoBeam(bird,5)
+                                beams.add(neo_Beam.gen_beams())
+                            else:
+                                beams.add(Beam(bird))
+          
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
             if event.type == pg.KEYDOWN and event.key == pg.K_s:
                 if score.value > 50 and len(shields)==0:
@@ -428,6 +446,7 @@ def main():
                     pg.display.update()
                     time.sleep(2)
                     return
+        
 
         life.update(life.num,screen) #課題1のupdate
         bird.update(key_lst, screen)
