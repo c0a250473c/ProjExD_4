@@ -10,7 +10,32 @@ WIDTH = 1100  # ゲームウィンドウの幅
 HEIGHT = 650  # ゲームウィンドウの高さ
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-
+class EMP:
+    """
+    追加機能3
+    """
+    def __init__(self, enemies, bombs, screen):
+        self.image = pg.Surface(screen.get_size())
+        self.image.fill((255, 255, 0))
+        self.image.set_alpha(128)
+        
+        self.screen = screen
+        self.life = 3
+        
+        #敵を無力化
+        for enemy in enemies:
+            enemy.interval = math.inf
+            enemy.image = pg.transform.laplacian(enemy.image)
+            
+        #爆弾を無効化
+        for bomb in bombs:
+            bomb.speed //= 2
+            bomb.state = "inactive"
+    def update(self):
+        self.life -= 1
+        if self.life > 0:
+            self.screen.blit(self.image, (0, 0))
+        
 def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
     """
     オブジェクトが画面内or画面外を判定し，真理値タプルを返す関数
@@ -126,6 +151,7 @@ class Bomb(pg.sprite.Sprite):
         self.rect.centerx = emy.rect.centerx
         self.rect.centery = emy.rect.centery+emy.rect.height//2
         self.speed = 6
+        self.state = "active"
 
     def update(self):
         """
@@ -293,6 +319,13 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
+            
+            #eキーが押されたら、スコア20消費してEMP発動
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_e and score.value > 20:
+                    score.value -= 20
+                    emp = EMP(emys, bombs, screen)
+            
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
             if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
@@ -300,6 +333,7 @@ def main():
                     gras.add(Gravity(400))
                     score.value -= 200
         screen.blit(bg_img, [0, 0])
+        
 
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
@@ -327,11 +361,12 @@ def main():
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
             life.num -= 1 #  衝突時にハートを減らす
             if life.num<=0:
-                bird.change_img(8, screen)  # こうかとん悲しみエフェクト
-                score.update(screen)
-                pg.display.update()
-                time.sleep(2)
-                return
+                if bomb.state == "active":
+                    bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+                    score.update(screen)
+                    pg.display.update()
+                    time.sleep(2)
+                    return
 
         life.update(life.num,screen) #課題1のupdate
         bird.update(key_lst, screen)
@@ -346,6 +381,12 @@ def main():
         gras.update()
         gras.draw(screen)
         score.update(screen)
+        
+        #EMPのエフェクト
+        # emp = None
+        if "emp" in locals():
+            emp.update()
+        
         pg.display.update()
         tmr += 1
         clock.tick(50)
