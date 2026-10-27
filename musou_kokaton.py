@@ -98,6 +98,10 @@ class Bird(pg.sprite.Sprite):
         self.rect.center = xy
         self.speed = 10
 
+        #追加機能４：無敵状態
+        self.state = "normal"  # 初期状態はノーマル
+        self.hyper_life = 0    # 無敵時間の初期値
+
     def change_img(self, num: int, screen: pg.Surface):
         """
         こうかとん画像を切り替え，画面に転送する
@@ -124,7 +128,16 @@ class Bird(pg.sprite.Sprite):
         if not (sum_mv[0] == 0 and sum_mv[1] == 0):
             self.dire = tuple(sum_mv)
             self.image = self.imgs[self.dire]
+
+        # 追加機能４：無敵状態
+        if self.state == "hyper":
+            self.image = pg.transform.laplacian(self.image) # 無敵状態の視覚的エフェクト
+            self.hyper_life -= 1
+            if self.hyper_life < 0:
+                self.state = "normal"
+
         screen.blit(self.image, self.rect)
+
 
 
 class Bomb(pg.sprite.Sprite):
@@ -332,6 +345,14 @@ def main():
                 if score.value >200:
                     gras.add(Gravity(400))
                     score.value -= 200
+
+            # 追加機能4：無敵状態
+            if event.type == pg.KEYDOWN and event.key == pg.K_RSHIFT:
+                if score.value > 100:
+                    bird.state = "hyper"
+                    bird.hyper_life = 500
+                    score.value -= 100
+
         screen.blit(bg_img, [0, 0])
         
 
@@ -367,6 +388,16 @@ def main():
                     pg.display.update()
                     time.sleep(2)
                     return
+            # 追加機能4：無敵状態なら爆弾を起爆してスコアアップ
+            if bird.state == "hyper":
+                exps.add(Explosion(bomb, 50))
+                score.value += 1
+            else:
+                bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+                score.update(screen)
+                pg.display.update()
+                time.sleep(2)
+                return
 
         life.update(life.num,screen) #課題1のupdate
         bird.update(key_lst, screen)
