@@ -380,25 +380,18 @@ def main():
             score.value += 10
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
-            life.num -= 1 #  衝突時にハートを減らす
-            if life.num<=0:
-                if bomb.state == "active":
-                    bird.change_img(8, screen)  # こうかとん悲しみエフェクト
-                    score.update(screen)
-                    pg.display.update()
-                    time.sleep(2)
-                    return
-                
             # 追加機能4：無敵状態なら爆弾を起爆してスコアアップ
             if bird.state == "hyper":
                 exps.add(Explosion(bomb, 50))
                 score.value += 1
             else:
-                bird.change_img(8, screen)  # こうかとん悲しみエフェクト
-                score.update(screen)
-                pg.display.update()
-                time.sleep(2)
-                return
+                life.num -= 1 # 衝突時にハートを減らす
+                if life.num <= 0:
+                    bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+                    score.update(screen)
+                    pg.display.update()
+                    time.sleep(2)
+                    return
 
         life.update(life.num,screen) #課題1のupdate
         bird.update(key_lst, screen)
