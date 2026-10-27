@@ -292,6 +292,36 @@ class Gravity(pg.sprite.Sprite):
         if self.life < 0:
             self.kill()
 
+    
+class Shield(pg.sprite.Sprite):
+    def __init__(self, bird, life: int):
+        super().__init__()
+
+        # 手順1：空のSurfaceを生成
+        self.image = pg.Surface((bird.rect.height * 2, 20), pg.SRCALPHA)
+
+        # 手順2：Surfaceに青い長方形を描く
+        pg.draw.rect(self.image, (0, 0, 255),
+                     (0, 0, bird.rect.height * 2, 20))
+
+        # 手順3・4：こうかとんの向きから角度を求める
+        vx, vy = bird.dire
+        angle = math.degrees(math.atan2(-vy, vx))+90
+
+        # 手順5：Surfaceを回転
+        self.image = pg.transform.rotate(self.image, angle)
+
+        # 手順6：向いている方向に、こうかとん1体分ずらして配置
+        self.rect = self.image.get_rect()
+        self.rect.centerx = bird.rect.centerx + vx * bird.rect.width
+        self.rect.centery = bird.rect.centery + vy * bird.rect.height
+
+        self.life = life
+
+    def update(self):
+        self.life -= 1
+        if self.life < 0:
+            self.kill()
 class Life:
     def __init__(self,num):
         self.num = num
@@ -307,9 +337,6 @@ class Life:
     def update(self,num,screen:pg.surface):
         for i in range(num):
             screen.blit(self.imag,[WIDTH-(50+(i*50)),HEIGHT-50])
-
-        
-
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -321,6 +348,7 @@ def main():
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
     emys = pg.sprite.Group()
+    shields = pg.sprite.Group()
     gras=pg.sprite.Group()
 
     life = Life(3)
@@ -341,6 +369,11 @@ def main():
             
             if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
                 beams.add(Beam(bird))
+            if event.type == pg.KEYDOWN and event.key == pg.K_s:
+                if score.value > 50 and len(shields)==0:
+                    score.value -=50
+                    shield = Shield(bird, 400)
+                    shields.add(shield)
             if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
                 if score.value >200:
                     gras.add(Gravity(400))
@@ -363,7 +396,7 @@ def main():
             if emy.state == "stop" and tmr%emy.interval == 0:
                 # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
                 bombs.add(Bomb(emy, bird))
-
+        
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():  # ビームと衝突した敵機リスト
             exps.add(Explosion(emy, 100))  # 爆発エフェクト
             score.value += 10  # 10点アップ
@@ -378,6 +411,9 @@ def main():
         for emy in pg.sprite.groupcollide(emys,gras,True,False).keys():
             exps.add(Explosion(emy, 100))  
             score.value += 10
+
+        for bomb in pg.sprite.groupcollide(bombs, shields, True, False).keys(): # 防御壁
+            exps.add(Explosion(bomb, 50))
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
             # 追加機能4：無敵状態なら爆弾を起爆してスコアアップ
@@ -406,6 +442,8 @@ def main():
         gras.update()
         gras.draw(screen)
         score.update(screen)
+        shields.update()
+        shields.draw(screen)
         
         #EMPのエフェクト
         # emp = None
