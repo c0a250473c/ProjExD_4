@@ -388,6 +388,7 @@ def main():
                     pg.display.update()
                     time.sleep(2)
                     return
+                
             # 追加機能4：無敵状態なら爆弾を起爆してスコアアップ
             if bird.state == "hyper":
                 exps.add(Explosion(bomb, 50))
